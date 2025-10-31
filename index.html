@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Agri-Fintech Prototype</title>
+  <style>
+    :root{
+      --bg:#f5f7fb; --card:#ffffff; --accent:#2b7a78; --muted:#6b7280;
+    }
+    body{ font-family: Inter, system-ui, Arial; margin:0; background:var(--bg); color:#0f172a;}
+    header{ background:linear-gradient(90deg,#115e59, #2b7a78); color:white; padding:14px 20px; display:flex; align-items:center; justify-content:space-between;}
+    header h1{ font-size:18px; margin:0;}
+    #app{ display:flex; gap:18px; padding:18px; align-items:flex-start; }
+    nav{ width:260px; }
+    .card{ background:var(--card); padding:16px; border-radius:10px; box-shadow:0 6px 18px rgba(16,24,40,0.06); }
+    .menu{ display:flex; flex-direction:column; gap:8px; }
+    .menu button{ text-align:left; padding:10px 12px; border-radius:8px; border:none; background:transparent; cursor:pointer; color:#0f172a; font-weight:600;}
+    .menu button.active{ background:#e6fffb; color:var(--accent); box-shadow: inset 0 0 0 1px rgba(43,122,120,0.08);}
+    main{ flex:1; display:grid; grid-template-columns: 1fr 360px; gap:18px;}
+    .section{ padding:12px; border-radius:8px; background:linear-gradient(180deg,#fff,#fbffff); }
+    label{ display:block; font-size:13px; color:var(--muted); margin-top:10px;}
+    input[type="text"], input[type="number"], select, textarea{ width:100%; padding:8px 10px; margin-top:6px; border-radius:6px; border:1px solid #e6eef0; box-sizing:border-box;}
+    button.primary{ background:var(--accent); color:white; padding:10px 12px; border:none; border-radius:8px; margin-top:12px; cursor:pointer;}
+    .small{ font-size:13px; color:var(--muted); }
+    .row{ display:flex; gap:12px; }
+    .kpi{ display:flex; gap:12px; margin-top:10px; }
+    .kpi .item{ flex:1; padding:10px; background:#f8fffd; border-radius:8px; text-align:center;}
+    table{ width:100%; border-collapse:collapse; margin-top:8px; font-size:13px;}
+    table th, table td{ text-align:left; padding:8px; border-bottom:1px solid #eef3f6;}
+    .chip{ display:inline-block; padding:6px 8px; border-radius:999px; background:#eaf7f6; color:var(--accent); font-weight:600; font-size:12px;}
+    footer{ padding:12px 18px; text-align:center; color:var(--muted); font-size:13px;}
+    @media(max-width:900px){ main{ grid-template-columns: 1fr; } nav{ display:none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Agri-Fintech — Farmer Portal (Prototype)</h1>
+    <div class="small">Local demo • No backend • Data in browser storage</div>
+  </header>
+
+  <div id="app">
+    <nav class="card">
+      <div style="font-weight:700;margin-bottom:10px;">Menu</div>
+      <div class="menu" id="menu">
+        <button class="active" data-view="dashboard">Dashboard</button>
+        <button data-view="register">Register Farmer</button>
+        <button data-view="credit">Credit Score</button>
+        <button data-view="loan">Apply Loan</button>
+        <button data-view="insurance">Insurance</button>
+        <button data-view="market">Market Prices</button>
+        <button data-view="analytics">Analytics</button>
+      </div>
+    </nav>
+
+    <main>
+      <!-- LEFT: Views -->
+      <div id="views" >
+        <!-- Dashboard -->
+        <div class="card section" id="view-dashboard">
+          <h2>Welcome</h2>
+          <p class="small">This prototype demonstrates the core flows: farmer registration, credit-scoring (heuristic), loan/insurance workflows, market prices, and analytics.</p>
+
+          <div style="display:flex;gap:12px;margin-top:12px;">
+            <div style="flex:1;">
+              <div class="card" style="padding:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div><strong>Active Farmers</strong><div class="small" id="count-farmers">0</div></div>
+                  <div class="chip" id="avg-score">Score: --</div>
+                </div>
+              </div>
+            </div>
+            <div style="width:220px;">
+              <div class="card" style="padding:10px;">
+                <strong>Latest Market</strong>
+                <div class="small" id="latest-market">--</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px;">
+            <h3>Quick actions</h3>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button class="primary" onclick="showView('register')">Register Farmer</button>
+              <button onclick="showView('market')">Check Market Prices</button>
+              <button onclick="showView('credit')">Compute Credit Score</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Register -->
+        <div class="card section" id="view-register" style="display:none;">
+          <h2>Register Farmer</h2>
+          <form id="frm-register">
+            <label>Full name<input type="text" id="f-name" placeholder="Ex: Ramesh Kumar" required></label>
+            <label>Mobile number<input type="text" id="f-mobile" placeholder="10-digit mobile" required></label>
+            <label>Village / Location<input type="text" id="f-village" placeholder="Village or town"></label>
+            <label>Land size (acres)<input type="number" id="f-land" placeholder="e.g., 1.5"></label>
+            <label>Primary crop
+              <select id="f-crop">
+                <option>Rice</option><option>Wheat</option><option>Maize</option><option>Cotton</option><option>Vegetables</option>
+              </select>
+            </label>
+            <label>Has formal credit history?
+              <select id="f-credit-history">
+                <option value="yes">Yes</option><option value="no" selected>No</option>
+              </select>
+            </label>
+
+            <label>Monthly digital transaction count (mobile payments)<input type="number" id="f-digital-trans" placeholder="e.g., 8"></label>
+
+            <button class="primary" type="submit">Save Farmer</button>
+          </form>
+        </div>
+
+        <!-- Credit Score -->
+        <div class="card section" id="view-credit" style="display:none;">
+          <h2>Credit Scoring (Heuristic)</h2>
+          <div class="small">This demo uses a simple scoring formula using land size, digital transaction activity and formal credit history.</div>
+
+          <label>Select farmer
+            <select id="select-farmer"></select>
+          </label>
+
+          <div style="margin-top:10px;">
+            <button class="primary" id="btn-calc-score">Calculate Score</button>
+          </div>
+
+          <div id="score-result" style="margin-top:12px;display:none;">
+            <h3>Score: <span id="score-val"></span> <span id="score-badge" class="chip"></span></h3>
+            <p class="small" id="score-explain"></p>
+          </div>
+        </div>
+
+        <!-- Loan -->
+        <div class="card section" id="view-loan" style="display:none;">
+          <h2>Loan Application</h2>
+          <label>Choose farmer
+            <select id="loan-farmer"></select>
+          </label>
+
+          <label>Loan amount (₹)<input type="number" id="loan-amount" placeholder="e.g., 20000"></label>
+          <label>Purpose
+            <select id="loan-purpose">
+              <option>Crop inputs</option><option>Equipment</option><option>Working capital</option>
+            </select>
+          </label>
+
+          <button class="primary" id="btn-apply-loan">Apply</button>
+
+          <div id="loan-result" style="margin-top:12px;display:none;"></div>
+        </div>
+
+        <!-- Insurance -->
+        <div class="card section" id="view-insurance" style="display:none;">
+          <h2>Crop Insurance</h2>
+          <label>Choose farmer
+            <select id="ins-farmer"></select>
+          </label>
+          <label>Crop type
+            <select id="ins-crop">
+              <option>Rice</option><option>Wheat</option><option>Maize</option><option>Vegetables</option>
+            </select>
+          </label>
+          <label>Sum insured (₹)<input type="number" id="ins-sum" value="50000"></label>
+          <div style="margin-top:8px;">
+            <button class="primary" id="btn-buy-ins">Buy Policy</button>
+          </div>
+          <div id="ins-result" style="margin-top:10px;display:none;"></div>
+        </div>
+
+        <!-- Market -->
+        <div class="card section" id="view-market" style="display:none;">
+          <h2>Market Prices (Simulated)</h2>
+          <div class="small">Live mandi prices aggregated from multiple sources (simulated)</div>
+          <table id="market-table">
+            <thead><tr><th>Commodity</th><th>Mandi Price ₹/kg</th><th>Trend</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <div style="margin-top:8px;">
+            <button onclick="simulateMarketTick()">Refresh prices</button>
+            <button onclick="seedMarket()">Seed sample prices</button>
+          </div>
+        </div>
+
+        <!-- Analytics -->
+        <div class="card section" id="view-analytics" style="display:none;">
+          <h2>Analytics & KPIs</h2>
+          <div class="small">Computed from local data (demo)</div>
+          <div class="kpi" id="kpi-row">
+            <div class="item">
+              <div class="small">Avg Credit Score</div><div id="kpi-score">--</div>
+            </div>
+            <div class="item">
+              <div class="small">Loan Approvals</div><div id="kpi-loans">--</div>
+            </div>
+            <div class="item">
+              <div class="small">Insured Farmers</div><div id="kpi-insured">--</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <h3>Recent Activity</h3>
+            <div id="activity-log" class="small"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: Quick info / actions -->
+      <aside>
+        <div class="card section" id="panel-profile">
+          <h3>Selected Farmer</h3>
+          <div id="selected-info" class="small">None</div>
+          <div style="margin-top:10px;">
+            <button onclick="showView('register')">Add / Edit Farmer</button>
+          </div>
+        </div>
+
+        <div class="card section" style="margin-top:12px;">
+          <h3>Tips</h3>
+          <ul style="padding-left:18px" class="small">
+            <li>Collect digital payments to build credit profile</li>
+            <li>Compare mandi prices before selling</li>
+            <li>Insurance reduces risk from weather shocks</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <footer>Prototype • Data stored in browser only • Expandable to real APIs</footer>
+
+<script>
+/* Simple client-side prototype JS */
+const state = { farmers: [], market: [], loans: [], policies: [], activity: [] };
+
+/* ---------- Storage helpers ---------- */
+function saveState(){ localStorage.setItem('agri_proto', JSON.stringify(state)); }
+function loadState(){
+  const raw = localStorage.getItem('agri_proto');
+  if(raw){ Object.assign(state, JSON.parse(raw)); }
+  else seedDemo();
+}
+function seedDemo(){
+  // sample farmers
+  state.farmers = [
+    { id:'f1', name:'Ramesh', mobile:'9000000001', village:'Anantapur', land:2.0, crop:'Rice', creditHistory:false, digitalTrans:5 },
+    { id:'f2', name:'Sita', mobile:'9000000002', village:'Nalgonda', land:1.0, crop:'Vegetables', creditHistory:true, digitalTrans:18 }
+  ];
+  seedMarket();
+  state.loans = [];
+  state.policies = [];
+  state.activity = ['Seeded demo'];
+  saveState();
+}
+
+/* ---------- UI helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function showView(view){
+  document.querySelectorAll('#views > .card').forEach(c=>c.style.display='none');
+  const v = document.querySelector(`#view-${view}`);
+  if(v) v.style.display='block';
+  // menu active state
+  document.querySelectorAll('#menu button').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  // update selects & info
+  refreshFarmerSelects();
+  updateCounts();
+}
+function refreshFarmerSelects(){
+  const sels = ['select-farmer','loan-farmer','ins-farmer'];
+  sels.forEach(id=>{
+    const sel = $(id);
+    if(!sel) return;
+    sel.innerHTML = '';
+    state.farmers.forEach(f=>{
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = `${f.name} — ${f.village} (${f.crop})`;
+      sel.appendChild(opt);
+    });
+  });
+  // select-farmer change event to show selected
+  const sf = $('select-farmer');
+  if(sf){ sf.onchange = ()=>{ $('score-result').style.display='none'; updateSelectedInfo(); } }
+  const lf = $('loan-farmer'); if(lf) lf.onchange = updateSelectedInfo;
+  const ins = $('ins-farmer'); if(ins) ins.onchange = updateSelectedInfo;
+}
+function updateSelectedInfo(){
+  const sel = document.querySelector('#select-farmer, #loan-farmer, #ins-farmer');
+  const id = sel ? sel.value : null;
+  const f = state.farmers.find(x=>x.id===id);
+  if(f) $('selected-info').innerHTML = `<strong>${f.name}</strong><div class="small">${f.mobile} • ${f.village} • ${f.land} ac • ${f.crop}</div>`;
+  else $('selected-info').innerHTML = 'None';
+}
+function updateCounts(){
+  $('count-farmers').textContent = state.farmers.length;
+  // average score
+  if(state.farmers.length===0){ $('avg-score').textContent = 'Score: --'; } 
+  else {
+    const avg = Math.round(state.farmers.reduce((s,f)=>s + heuristicScore(f),0)/state.farmers.length);
+    $('avg-score').textContent = `Score: ${avg}`;
+  }
+  // latest market
+  const latest = state.market.map(m=>`${m.name}: ₹${m.price}`).slice(0,3).join(' • ');
+  $('latest-market').textContent = latest || '--';
+}
+
+/* ---------- Registration ---------- */
+$('frm-register').addEventListener('submit', e=>{
+  e.preventDefault();
+  const f = {
+    id: 'f' + Date.now(),
+    name: $('f-name').value || 'Unknown',
+    mobile: $('f-mobile').value || '',
+    village: $('f-village').value || '',
+    land: parseFloat($('f-land').value) || 0,
+    crop: $('f-crop').value,
+    creditHistory: $('f-credit-history').value === 'yes',
+    digitalTrans: parseInt($('f-digital-trans').value) || 0
+  };
+  state.farmers.push(f);
+  state.activity.unshift(`Registered ${f.name}`);
+  saveState();
+  refreshFarmerSelects();
+  updateCounts();
+  alert('Farmer saved ✅');
+  showView('dashboard');
+});
+
+/* ---------- Credit scoring ---------- */
+/* Heuristic: base 40 + land (10 per acre up to 30) + digital trans (2 per txn up to 20) + creditHistory +10 */
+function heuristicScore(f){
+  if(!f) return 0;
+  let score = 40;
+  score += Math.min(30, Math.round(f.land * 10));
+  score += Math.min(20, f.digitalTrans * 2);
+  if(f.creditHistory) score += 10;
+  return Math.min(100, score);
+}
+
+$('btn-calc-score').addEventListener('click', ()=>{
+  const sel = $('select-farmer');
+  if(!sel || !sel.value){ alert('Select a farmer'); return; }
+  const f = state.farmers.find(x=>x.id===sel.value);
+  const score = heuristicScore(f);
+  $('score-val').textContent = score;
+  const badge = score >= 70 ? 'Good' : score >= 50 ? 'Fair' : 'Low';
+  $('score-badge').textContent = badge;
+  $('score-explain').textContent = `Score components: base 40 + land ${Math.min(30, Math.round(f.land*10))} + digital ${Math.min(20,f.digitalTrans*2)} + credit history ${f.creditHistory?10:0}`;
+  $('score-result').style.display = 'block';
+  state.activity.unshift(`Calculated score ${score} for ${f.name}`);
+  saveState();
+  updateCounts();
+});
+
+/* ---------- Loan application ---------- */
+$('btn-apply-loan').addEventListener('click', ()=>{
+  const fid = $('loan-farmer').value;
+  if(!fid){ alert('Select farmer'); return; }
+  const f = state.farmers.find(x=>x.id===fid);
+  const amount = parseInt($('loan-amount').value) || 0;
+  if(amount<=0){ alert('Enter loan amount'); return; }
+  const score = heuristicScore(f);
+  // simple approval rule
+  let approved=false; let reason='';
+  if(score >= 70 && amount <= (f.land * 40000 + 30000)) { approved=true; reason='Auto-approved by score & land collateral estimate'; }
+  else if(score >= 50 && amount <= 30000){ approved=true; reason='Conditional approval (small loan)'; }
+  else { approved=false; reason='Score too low or amount too large'; }
+
+  const loan = { id:'l'+Date.now(), farmerId:fid, amount, approved, reason, date: new Date().toISOString() };
+  state.loans.push(loan);
+  saveState();
+  state.activity.unshift(`${approved ? 'Loan approved' : 'Loan rejected'} for ${f.name} ₹${amount}`);
+  $('loan-result').style.display='block';
+  $('loan-result').innerHTML = `<div><strong>${approved ? 'Approved ✅' : 'Rejected ❌'}</strong></div><div class="small">${reason}</div>`;
+  updateCounts();
+});
+
+/* ---------- Insurance purchase ---------- */
+$('btn-buy-ins').addEventListener('click', ()=>{
+  const fid = $('ins-farmer').value;
+  if(!fid){ alert('Select farmer'); return; }
+  const sum = parseInt($('ins-sum').value) || 0;
+  const crop = $('ins-crop').value;
+  if(sum <= 0){ alert('Enter sum insured'); return; }
+  // simple premium calc: 3% of sum
+  const premium = Math.round(sum * 0.03);
+  const policy = { id:'p'+Date.now(), farmerId:fid, crop, sum, premium, date: new Date().toISOString() };
+  state.policies.push(policy);
+  saveState();
+  const f = state.farmers.find(x=>x.id===fid);
+  state.activity.unshift(`Bought policy for ${f.name} ${crop} ₹${sum}`);
+  $('ins-result').style.display='block';
+  $('ins-result').innerHTML = `<div><strong>Policy purchased ✅</strong></div><div class="small">Sum ₹${sum} • Premium ₹${premium}</div>`;
+  updateCounts();
+});
+
+/* ---------- Market simulation ---------- */
+function seedMarket(){
+  state.market = [
+    { name:'Rice', price: 28 + Math.round(Math.random()*4), trend:'stable' },
+    { name:'Wheat', price: 22 + Math.round(Math.random()*5), trend:'up' },
+    { name:'Maize', price: 18 + Math.round(Math.random()*4), trend:'down' },
+    { name:'Tomato', price: 16 + Math.round(Math.random()*6), trend:'up' },
+    { name:'Cotton', price: 140 + Math.round(Math.random()*20), trend:'stable' }
+  ];
+  state.activity.unshift('Seeded market data');
+  saveState();
+  renderMarket();
+  updateCounts();
+}
+function simulateMarketTick(){
+  state.market.forEach(m=>{
+    const delta = Math.round((Math.random()-0.5) * 4);
+    m.price = Math.max(5, m.price + delta);
+    m.trend = delta > 0 ? 'up' : delta < 0 ? 'down' : 'stable';
+  });
+  state.activity.unshift('Market prices updated');
+  saveState();
+  renderMarket();
+  updateCounts();
+}
+function renderMarket(){
+  const tbody = document.querySelector('#market-table tbody');
+  tbody.innerHTML = '';
+  state.market.forEach(m=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${m.name}</td><td>₹${m.price}</td><td class="small">${m.trend}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ---------- Analytics ---------- */
+function renderAnalytics(){
+  const avgScore = state.farmers.length ? Math.round(state.farmers.reduce((s,f)=>s+heuristicScore(f),0)/state.farmers.length) : '--';
+  $('kpi-score').textContent = avgScore;
+  const approvedLoans = state.loans.filter(l=>l.approved).length;
+  $('kpi-loans').textContent = approvedLoans;
+  $('kpi-insured').textContent = state.policies.length;
+  // activity log
+  $('activity-log').innerHTML = state.activity.slice(0,10).map(a=>`• ${a}`).join('<br>');
+}
+
+/* ---------- Load & init ---------- */
+window.addEventListener('load', ()=>{
+  loadState();
+  refreshFarmerSelects();
+  renderMarket();
+  updateCounts();
+  renderAnalytics();
+  // attach menu events
+  document.querySelectorAll('#menu button').forEach(b=>{
+    b.addEventListener('click', ()=> showView(b.dataset.view));
+  });
+  // update analytics when page becomes visible
+  setInterval(()=>{ renderAnalytics(); }, 2000);
+});
+</script>
+</body>
+</html>
